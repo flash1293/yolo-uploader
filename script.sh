@@ -105,14 +105,16 @@ process_batch() {
     local curl_exit_code=$?
     
     if [ $curl_exit_code -eq 0 ]; then
-      if echo "$response" | grep -q '"errors":true'; then
+      if echo "$response" | grep -q 'root_cause\|"errors":true'; then
         echo -e "${YELLOW}⚠️  Batch ${batch_num} had some errors${NC}"
+        echo "$response"
         overall_success=false
       else
         echo -e "${GREEN}✅ Batch ${batch_num} completed successfully${NC}"
       fi
     else
       echo -e "${RED}❌ Batch ${batch_num} failed!${NC}"
+      echo "$response"
       overall_success=false
     fi
     
@@ -128,6 +130,11 @@ eval "cat $FILE_PATTERN" | \
 awk '{
   gsub(/\\/, "\\\\");
   gsub(/"/, "\\\"");
+  gsub(/\r/, "\\\\r");
+  gsub(/\n/, "\\\\n");
+  gsub(/\t/, "\\\\t");
+  gsub(/\f/, "\\\\f");
+  gsub(/\b/, "\\\\b");
   printf "{\"create\":{}}\n{\"message\":\"%s\"}\n", $0
 }' | \
 while IFS= read -r line; do
