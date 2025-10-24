@@ -69,6 +69,7 @@ echo -e "${YELLOW}⏳ Uploading logs...${NC}"
 # --- Show preview of the request format ---
 echo -e "${BLUE}📋 Request Preview (first 3 log lines):${NC}"
 echo -e "${CYAN}---${NC}"
+
 echo -e "${PURPLE}POST /logs/_bulk${NC}"
 
 preview_count=0
