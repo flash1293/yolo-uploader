@@ -66,6 +66,30 @@ fi
 echo -e "${CYAN}---------------------------------${NC}"
 echo -e "${YELLOW}⏳ Uploading logs...${NC}"
 
+# --- Show preview of the request format ---
+echo -e "${BLUE}📋 Request Preview (first 3 log lines):${NC}"
+echo -e "${CYAN}---${NC}"
+
+preview_count=0
+eval "cat $FILE_PATTERN" | head -3 | \
+awk '{
+  gsub(/\\/, "\\\\");
+  gsub(/"/, "\\\"");
+  gsub(/\r/, "\\\\r");
+  gsub(/\n/, "\\\\n");
+  gsub(/\t/, "\\\\t");
+  gsub(/\f/, "\\\\f");
+  gsub(/\b/, "\\\\b");
+  printf "{\"create\":{}}\n{\"message\":\"%s\"}\n", $0
+}' | while IFS= read -r line; do
+  echo "$line"
+done
+
+echo -e "${CYAN}---${NC}"
+echo -e "${BLUE}💡 Each log line becomes 2 JSON lines: a 'create' action + the message${NC}"
+echo -e "${BLUE}🌐 Sending to: ${TARGET_URL}${NC}"
+echo -e "${CYAN}---------------------------------${NC}"
+
 # --- 4. Build full URL with fixed index ---
 CLUSTER_URL_WITH_INDEX="${CLUSTER_URL}/logs"
 
