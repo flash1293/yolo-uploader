@@ -108,23 +108,24 @@ process_batch() {
       if echo "$response" | grep -q 'root_cause\|"errors":true'; then
         echo -e "${YELLOW}⚠️  Batch ${batch_num} had some errors${NC}"
         echo "$response"
-        overall_success=false
+        return 1  # Return error status instead of setting variable
       else
         echo -e "${GREEN}✅ Batch ${batch_num} completed successfully${NC}"
+        return 0
       fi
     else
       echo -e "${RED}❌ Batch ${batch_num} failed!${NC}"
       echo "$response"
-      overall_success=false
+      return 1
     fi
-    
-    return $curl_exit_code
   fi
+  return 0
 }
 
 # Process files with batching
 current_batch=""
 lines_in_batch=0
+temp_file=$(mktemp)
 
 eval "cat $FILE_PATTERN" | \
 awk '{
@@ -146,6 +147,9 @@ while IFS= read -r line; do
   if [ $((lines_in_batch / 2)) -ge $BATCH_SIZE ]; then
     batch_count=$((batch_count + 1))
     echo -ne "$current_batch" | process_batch "$(cat)" $batch_count
+    if [ $? -ne 0 ]; then
+      echo "error" >> "$temp_file"
+    fi
     current_batch=""
     lines_in_batch=0
   fi
@@ -155,7 +159,16 @@ done
 if [ -n "$current_batch" ] && [ $lines_in_batch -gt 0 ]; then
   batch_count=$((batch_count + 1))
   echo -ne "$current_batch" | process_batch "$(cat)" $batch_count
+  if [ $? -ne 0 ]; then
+    echo "error" >> "$temp_file"
+  fi
 fi
+
+# Check if there were any errors
+if [ -s "$temp_file" ]; then
+  overall_success=false
+fi
+rm -f "$temp_file"
 
 # Summary of batching
 if [ $batch_count -gt 1 ]; then
