@@ -39,8 +39,20 @@ echo -e "${YELLOW}📁 Files to upload:${NC}"
 
 # Check if files exist and show them with line counts
 files_found=false
-total_lines=1
-for file in $(eval echo $FILE_PATTERN); do
+total_lines=0
+
+# Use a more portable approach to expand glob patterns
+files_list=""
+for pattern_file in $FILE_PATTERN; do
+  if [ -f "$pattern_file" ]; then
+    files_list="$files_list $pattern_file"
+  fi
+done
+
+# Convert to array manually for portability
+IFS=' ' read -ra files_array <<< "$files_list"
+
+for file in "${files_array[@]}"; do
   if [ -f "$file" ]; then
     line_count=$(wc -l < "$file")
     echo -e "  ${GREEN}✓${NC} $file (${CYAN}${line_count}${NC} lines)"
@@ -73,15 +85,18 @@ echo -e "${CYAN}---${NC}"
 echo -e "${PURPLE}POST /logs/_bulk${NC}"
 
 preview_count=0
-eval "cat $FILE_PATTERN" | head -3 | \
+eval "cat $files_list" | head -3 | \
 awk '{
+  # First escape backslashes to avoid issues with Windows paths
   gsub(/\\/, "\\\\");
+  # Then escape quotes
   gsub(/"/, "\\\"");
-  gsub(/\r/, "\\\\r");
-  gsub(/\n/, "\\\\n");
-  gsub(/\t/, "\\\\t");
-  gsub(/\f/, "\\\\f");
-  gsub(/\b/, "\\\\b");
+  # Handle other control characters
+  gsub(/\r/, "\\r");
+  gsub(/\n/, "\\n");
+  gsub(/\t/, "\\t");
+  gsub(/\f/, "\\f");
+  gsub(/\b/, "\\b");
   printf "{\"create\":{}}\n{\"message\":\"%s\"}\n", $0
 }' | while IFS= read -r line; do
   echo "$line"
@@ -153,15 +168,18 @@ current_batch=""
 lines_in_batch=0
 temp_file=$(mktemp)
 
-eval "cat $FILE_PATTERN" | \
+eval "cat $files_list" | \
 awk '{
+  # First escape backslashes to avoid issues with Windows paths
   gsub(/\\/, "\\\\");
+  # Then escape quotes
   gsub(/"/, "\\\"");
-  gsub(/\r/, "\\\\r");
-  gsub(/\n/, "\\\\n");
-  gsub(/\t/, "\\\\t");
-  gsub(/\f/, "\\\\f");
-  gsub(/\b/, "\\\\b");
+  # Handle other control characters
+  gsub(/\r/, "\\r");
+  gsub(/\n/, "\\n");
+  gsub(/\t/, "\\t");
+  gsub(/\f/, "\\f");
+  gsub(/\b/, "\\b");
   printf "{\"create\":{}}\n{\"message\":\"%s\"}\n", $0
 }' | \
 while IFS= read -r line; do
