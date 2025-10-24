@@ -39,7 +39,7 @@ echo -e "${YELLOW}📁 Files to upload:${NC}"
 
 # Check if files exist and show them with line counts
 files_found=false
-total_lines=0
+total_lines=1
 for file in $(eval echo $FILE_PATTERN); do
   if [ -f "$file" ]; then
     line_count=$(wc -l < "$file")
@@ -69,6 +69,7 @@ echo -e "${YELLOW}⏳ Uploading logs...${NC}"
 # --- Show preview of the request format ---
 echo -e "${BLUE}📋 Request Preview (first 3 log lines):${NC}"
 echo -e "${CYAN}---${NC}"
+echo -e "${PURPLE}POST /logs/_bulk${NC}"
 
 preview_count=0
 eval "cat $FILE_PATTERN" | head -3 | \
